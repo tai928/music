@@ -12,17 +12,6 @@ const timeTextEl = document.getElementById("timeText");
 const startBtn = document.getElementById("startBtn");
 const startScreenEl = document.getElementById("startScreen");
 
-const EFFECT_CLASSES = [
-  "effect-fade",
-  "effect-float",
-  "effect-blur",
-  "effect-pop",
-  "effect-chorus",
-  "effect-drift"
-];
-
-const DEFAULT_EFFECT = "fade";
-
 let currentSongIndex = 0;
 let currentLyricIndex = -1;
 let lyricChangeTimer = null;
@@ -49,15 +38,10 @@ function renderSongOptions() {
   });
 }
 
-function clearEffectClasses() {
-  lyricsEl.classList.remove(...EFFECT_CLASSES);
-}
-
 function resetLyrics() {
   clearTimeout(lyricChangeTimer);
   currentLyricIndex = -1;
-  clearEffectClasses();
-  lyricsEl.classList.remove("show", "hide");
+  lyricsEl.classList.remove("show");
   lyricsEl.textContent = "";
 }
 
@@ -95,48 +79,6 @@ function getCurrentLyricIndex(currentTime) {
   });
 }
 
-function getSafeEffectName(effectName) {
-  if (typeof effectName !== "string") {
-    return DEFAULT_EFFECT;
-  }
-
-  const normalized = effectName.trim().toLowerCase();
-  const className = `effect-${normalized}`;
-
-  return EFFECT_CLASSES.includes(className) ? normalized : DEFAULT_EFFECT;
-}
-
-function showLyric(line) {
-  clearTimeout(lyricChangeTimer);
-
-  lyricsEl.classList.remove("show");
-  lyricsEl.classList.add("hide");
-  clearEffectClasses();
-
-  const effectName = getSafeEffectName(line.effect);
-
-  lyricChangeTimer = setTimeout(() => {
-    lyricsEl.textContent = line.text;
-    lyricsEl.classList.remove("hide");
-    lyricsEl.classList.add(`effect-${effectName}`);
-    lyricsEl.classList.add("show");
-  }, 120);
-}
-
-function clearLyric() {
-  clearTimeout(lyricChangeTimer);
-
-  lyricsEl.classList.remove("show");
-  lyricsEl.classList.add("hide");
-
-  lyricChangeTimer = setTimeout(() => {
-    if (currentLyricIndex === -1) {
-      lyricsEl.textContent = "";
-      clearEffectClasses();
-    }
-  }, 260);
-}
-
 function updateLyrics() {
   const newLyricIndex = getCurrentLyricIndex(audio.currentTime);
 
@@ -145,15 +87,22 @@ function updateLyrics() {
   }
 
   currentLyricIndex = newLyricIndex;
+  clearTimeout(lyricChangeTimer);
 
-  if (currentLyricIndex === -1) {
-    clearLyric();
-    return;
-  }
+  lyricsEl.classList.remove("show");
 
-  const currentSong = songs[currentSongIndex];
-  const currentLyric = currentSong.lyrics[currentLyricIndex];
-  showLyric(currentLyric);
+  lyricChangeTimer = setTimeout(() => {
+    if (currentLyricIndex === -1) {
+      lyricsEl.textContent = "";
+      return;
+    }
+
+    const currentSong = songs[currentSongIndex];
+    const currentLyric = currentSong.lyrics[currentLyricIndex];
+
+    lyricsEl.textContent = currentLyric.text;
+    lyricsEl.classList.add("show");
+  }, 120);
 }
 
 function updateProgress() {
