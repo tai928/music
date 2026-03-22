@@ -32,7 +32,7 @@ const songs = [
   {
     title: "Parasite",
     artist: "DECO*27",
-    file: "songs/Parasite.mp3",
+    file: "songs/parasite.mp3",
     lyrics: [
       { start: 1.0, end: 4.0, text: "text" },
       { start: 4.2, end: 7.5, text: "text" },
@@ -40,7 +40,7 @@ const songs = [
     ]
   },
   {
-    title: "ai kotoba5",
+    title: "愛言葉Ⅴ",
     artist: "DECO*27",
     file: "songs/aikotoba5.mp3",
     lyrics: [
