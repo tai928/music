@@ -30,43 +30,43 @@ const songs = [
     ]
   },
   {
-    title: "Second Song",
-    artist: "Your Artist",
-    file: "songs/song2.mp3",
+    title: "Parasite",
+    artist: "DECO*27",
+    file: "songs/Parasite.mp3",
     lyrics: [
-      { start: 1.0, end: 4.0, text: "二曲目のはじまり" },
-      { start: 4.2, end: 7.5, text: "雰囲気を変えてもいい" },
-      { start: 8.0, end: 12.0, text: "サビだけ大きめに見せるのもあり" }
+      { start: 1.0, end: 4.0, text: "text" },
+      { start: 4.2, end: 7.5, text: "text" },
+      { start: 8.0, end: 12.0, text: "text" }
     ]
   },
   {
-    title: "Third Song",
-    artist: "Your Artist",
-    file: "songs/song3.mp3",
+    title: "ai kotoba5",
+    artist: "DECO*27",
+    file: "songs/aikotoba5.mp3",
     lyrics: [
-      { start: 0.8, end: 3.6, text: "三曲目の歌詞" },
-      { start: 4.0, end: 6.5, text: "短く切ると映える" },
-      { start: 7.0, end: 10.5, text: "長文より一節ずつが強い" }
+      { start: 0.8, end: 3.6, text: "text" },
+      { start: 4.0, end: 6.5, text: "text" },
+      { start: 7.0, end: 10.5, text: "text" }
     ]
   },
   {
-  title: "New Song",
-  artist: "New Artist",
-  file: "songs/new-song.mp3",
+  title: "New Me",
+  artist: "YOASOBI",
+  file: "songs/NewMe.mp3",
   lyrics: [
-    { start: 0.5, end: 3.0, text: "ここに歌詞" },
-    { start: 3.2, end: 6.2, text: "次の歌詞" },
-    { start: 6.5, end: 9.8, text: "次のフレーズ" }
+    { start: 0.5, end: 3.0, text: "text" },
+    { start: 3.2, end: 6.2, text: "text" },
+    { start: 6.5, end: 9.8, text: "text" }
   ]
 },
-  {
-  title: "New Song2",
-  artist: "New Artist",
-  file: "songs/new-song.mp3",
+   {
+  title: "可愛いあの子が気にゐらない",
+  artist: "なるみや",
+  file: "songs/Kawaiianokogakiniiranai.mp3",
   lyrics: [
-    { start: 0.5, end: 3.0, text: "ここに歌詞" },
-    { start: 3.2, end: 6.2, text: "次の歌詞" },
-    { start: 6.5, end: 9.8, text: "次のフレーズ" }
+    { start: 0.5, end: 3.0, text: "text" },
+    { start: 3.2, end: 6.2, text: "text" },
+    { start: 6.5, end: 9.8, text: "text" }
   ]
 }
 ];
