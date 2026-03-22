@@ -1,127 +1,117 @@
-const songs = [
-  {
-    title: "First Song",
-    artist: "Your Artist",
-    file: "songs/song1.mp3",
-    lyrics: [
-      { start: 0.5, end: 3.2, text: "最初のフレーズ" },
-      { start: 3.4, end: 6.8, text: "やさしく浮かぶ歌詞" },
-      { start: 7.2, end: 11.0, text: "少し遅れて消えていく" }
-    ]
-  },
-  {
-    title: "Second Song",
-    artist: "Your Artist",
-    file: "songs/song2.mp3",
-    lyrics: [
-      { start: 1.0, end: 4.0, text: "二曲目のはじまり" },
-      { start: 4.2, end: 7.5, text: "雰囲気を変えてもいい" },
-      { start: 8.0, end: 12.0, text: "サビだけ大きめに見せるのもあり" }
-    ]
-  },
-  {
-    title: "Third Song",
-    artist: "Your Artist",
-    file: "songs/song3.mp3",
-    lyrics: [
-      { start: 0.8, end: 3.6, text: "三曲目の歌詞" },
-      { start: 4.0, end: 6.5, text: "短く切ると映える" },
-      { start: 7.0, end: 10.5, text: "長文より一節ずつが強い" }
-    ]
-  }
-];
-
 const audio = document.getElementById("audio");
 const lyricsEl = document.getElementById("lyrics");
-const songTitle = document.getElementById("songTitle");
-const songArtist = document.getElementById("songArtist");
-const songSelect = document.getElementById("songSelect");
+const songTitleEl = document.getElementById("songTitle");
+const songArtistEl = document.getElementById("songArtist");
+const songSelectEl = document.getElementById("songSelect");
 const playPauseBtn = document.getElementById("playPauseBtn");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
-const progress = document.getElementById("progress");
-const timeline = document.getElementById("timeline");
-const timeText = document.getElementById("timeText");
+const progressEl = document.getElementById("progress");
+const timelineEl = document.getElementById("timeline");
+const timeTextEl = document.getElementById("timeText");
 const startBtn = document.getElementById("startBtn");
-const startScreen = document.getElementById("startScreen");
+const startScreenEl = document.getElementById("startScreen");
 
 let currentSongIndex = 0;
 let currentLyricIndex = -1;
+let lyricChangeTimer = null;
 
-function formatTime(sec) {
-  if (!Number.isFinite(sec)) return "0:00";
-  const minutes = Math.floor(sec / 60);
-  const seconds = Math.floor(sec % 60);
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+function formatTime(seconds) {
+  if (!Number.isFinite(seconds)) {
+    return "0:00";
+  }
+
+  const minutes = Math.floor(seconds / 60);
+  const remainSeconds = Math.floor(seconds % 60);
+
+  return `${minutes}:${String(remainSeconds).padStart(2, "0")}`;
 }
 
 function renderSongOptions() {
-  songSelect.innerHTML = "";
+  songSelectEl.innerHTML = "";
 
   songs.forEach((song, index) => {
     const option = document.createElement("option");
-    option.value = index;
+    option.value = String(index);
     option.textContent = `${song.title} / ${song.artist}`;
-    songSelect.appendChild(option);
+    songSelectEl.appendChild(option);
   });
 }
 
-function loadSong(index, keepPlaying = false) {
-  currentSongIndex = index;
+function resetLyrics() {
+  clearTimeout(lyricChangeTimer);
   currentLyricIndex = -1;
+  lyricsEl.classList.remove("show");
+  lyricsEl.textContent = "";
+}
 
-  const song = songs[index];
+function updateSongMeta(song) {
+  songTitleEl.textContent = song.title;
+  songArtistEl.textContent = song.artist;
+  songSelectEl.value = String(currentSongIndex);
+}
 
-  songTitle.textContent = song.title;
-  songArtist.textContent = song.artist;
-  songSelect.value = index;
+function loadSong(index, shouldAutoPlay = false) {
+  currentSongIndex = index;
+  const song = songs[currentSongIndex];
+
+  updateSongMeta(song);
+  resetLyrics();
 
   audio.src = song.file;
   audio.load();
 
-  lyricsEl.textContent = "";
-  lyricsEl.classList.remove("show");
-  progress.style.width = "0%";
-  timeText.textContent = "0:00 / 0:00";
+  progressEl.style.width = "0%";
+  timeTextEl.textContent = "0:00 / 0:00";
 
-  if (keepPlaying) {
+  if (shouldAutoPlay) {
     audio.play().catch((error) => {
       console.error("再生エラー:", error);
     });
   }
 }
 
-function updateLyrics() {
-  const currentTime = audio.currentTime;
-  const song = songs[currentSongIndex];
+function getCurrentLyricIndex(currentTime) {
+  const currentSong = songs[currentSongIndex];
 
-  const newIndex = song.lyrics.findIndex((line) => {
+  return currentSong.lyrics.findIndex((line) => {
     return currentTime >= line.start && currentTime < line.end;
   });
+}
 
-  if (newIndex !== currentLyricIndex) {
-    currentLyricIndex = newIndex;
-    lyricsEl.classList.remove("show");
+function updateLyrics() {
+  const newLyricIndex = getCurrentLyricIndex(audio.currentTime);
 
-    setTimeout(() => {
-      if (currentLyricIndex === -1) {
-        lyricsEl.textContent = "";
-        return;
-      }
-
-      lyricsEl.textContent = song.lyrics[currentLyricIndex].text;
-      lyricsEl.classList.add("show");
-    }, 120);
+  if (newLyricIndex === currentLyricIndex) {
+    return;
   }
+
+  currentLyricIndex = newLyricIndex;
+  clearTimeout(lyricChangeTimer);
+
+  lyricsEl.classList.remove("show");
+
+  lyricChangeTimer = setTimeout(() => {
+    if (currentLyricIndex === -1) {
+      lyricsEl.textContent = "";
+      return;
+    }
+
+    const currentSong = songs[currentSongIndex];
+    const currentLyric = currentSong.lyrics[currentLyricIndex];
+
+    lyricsEl.textContent = currentLyric.text;
+    lyricsEl.classList.add("show");
+  }, 120);
 }
 
 function updateProgress() {
-  const current = audio.currentTime;
+  const currentTime = audio.currentTime;
   const duration = audio.duration || 0;
-  const percent = duration ? (current / duration) * 100 : 0;
+  const ratio = duration > 0 ? currentTime / duration : 0;
 
-  progress.style.width = `${percent}%`;
-  timeText.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
+  progressEl.style.width = `${ratio * 100}%`;
+  timeTextEl.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
 }
 
 function togglePlayPause() {
@@ -144,31 +134,45 @@ function playPrevSong() {
   loadSong(prevIndex, true);
 }
 
-songSelect.addEventListener("change", (event) => {
-  const selectedIndex = Number(event.target.value);
-  const shouldKeepPlaying = !audio.paused;
-  loadSong(selectedIndex, shouldKeepPlaying);
-});
+function seekAudio(event) {
+  const rect = timelineEl.getBoundingClientRect();
+  const positionX = event.clientX - rect.left;
+  const ratio = Math.max(0, Math.min(1, positionX / rect.width));
+  const duration = audio.duration || 0;
 
-playPauseBtn.addEventListener("click", togglePlayPause);
-nextBtn.addEventListener("click", playNextSong);
-prevBtn.addEventListener("click", playPrevSong);
+  audio.currentTime = ratio * duration;
+}
 
-startBtn.addEventListener("click", async () => {
-  startScreen.style.display = "none";
+async function startPlayback() {
+  startScreenEl.style.display = "none";
 
   try {
     await audio.play();
   } catch (error) {
     console.error("再生エラー:", error);
-    startScreen.style.display = "flex";
+    startScreenEl.style.display = "flex";
   }
+}
+
+songSelectEl.addEventListener("change", (event) => {
+  const nextIndex = Number(event.target.value);
+  const shouldResume = !audio.paused;
+
+  loadSong(nextIndex, shouldResume);
 });
+
+playPauseBtn.addEventListener("click", togglePlayPause);
+prevBtn.addEventListener("click", playPrevSong);
+nextBtn.addEventListener("click", playNextSong);
+timelineEl.addEventListener("click", seekAudio);
+startBtn.addEventListener("click", startPlayback);
 
 audio.addEventListener("timeupdate", () => {
   updateLyrics();
   updateProgress();
 });
+
+audio.addEventListener("loadedmetadata", updateProgress);
 
 audio.addEventListener("play", () => {
   playPauseBtn.textContent = "⏸ Pause";
@@ -180,17 +184,6 @@ audio.addEventListener("pause", () => {
 
 audio.addEventListener("ended", () => {
   playNextSong();
-});
-
-audio.addEventListener("loadedmetadata", () => {
-  updateProgress();
-});
-
-timeline.addEventListener("click", (event) => {
-  const rect = timeline.getBoundingClientRect();
-  const clickX = event.clientX - rect.left;
-  const ratio = clickX / rect.width;
-  audio.currentTime = ratio * (audio.duration || 0);
 });
 
 renderSongOptions();
