@@ -28,5 +28,25 @@ const songs = [
       { start: 4.0, end: 6.5, text: "短く切ると映える" },
       { start: 7.0, end: 10.5, text: "長文より一節ずつが強い" }
     ]
-  }
+  },
+  {
+  title: "New Song",
+  artist: "New Artist",
+  file: "songs/new-song.mp3",
+  lyrics: [
+    { start: 0.5, end: 3.0, text: "ここに歌詞" },
+    { start: 3.2, end: 6.2, text: "次の歌詞" },
+    { start: 6.5, end: 9.8, text: "次のフレーズ" }
+  ]
+},
+  {
+  title: "New Song2",
+  artist: "New Artist",
+  file: "songs/new-song.mp3",
+  lyrics: [
+    { start: 0.5, end: 3.0, text: "ここに歌詞" },
+    { start: 3.2, end: 6.2, text: "次の歌詞" },
+    { start: 6.5, end: 9.8, text: "次のフレーズ" }
+  ]
+}
 ];
