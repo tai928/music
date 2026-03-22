@@ -1,260 +1,32 @@
-:root {
-  --bg1: #0a0d16;
-  --bg2: #141a2a;
-  --bg3: #20192d;
-  --text: rgba(255, 255, 255, 0.95);
-  --sub: rgba(255, 255, 255, 0.6);
-  --line: rgba(255, 255, 255, 0.12);
-  --glass: rgba(255, 255, 255, 0.06);
-  --glow: rgba(180, 200, 255, 0.16);
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html,
-body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
-  color: var(--text);
-  background:
-    radial-gradient(circle at 20% 20%, rgba(120, 140, 255, 0.14), transparent 25%),
-    radial-gradient(circle at 80% 30%, rgba(210, 120, 255, 0.08), transparent 24%),
-    linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
-}
-
-body {
-  position: relative;
-}
-
-body::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
-  pointer-events: none;
-}
-
-.app {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  padding: 20px;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 16px;
-}
-
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  border: 1px solid var(--line);
-  background: var(--glass);
-  backdrop-filter: blur(12px);
-  border-radius: 20px;
-}
-
-.brand {
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.song-select {
-  appearance: none;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.08);
-  color: white;
-  padding: 10px 14px;
-  border-radius: 999px;
-  font-size: 0.95rem;
-  max-width: 52vw;
-  outline: none;
-  cursor: pointer;
-}
-
-.song-select option {
-  color: #111;
-}
-
-.main {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-height: 0;
-  text-align: center;
-  padding: 12px;
-}
-
-.meta {
-  margin-bottom: 18px;
-}
-
-.title {
-  font-size: clamp(1.4rem, 3vw, 2rem);
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-
-.artist {
-  font-size: 0.95rem;
-  color: var(--sub);
-}
-
-.lyrics-wrap {
-  width: min(100%, 900px);
-  min-height: 170px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-}
-
-.lyrics {
-  font-size: clamp(2rem, 6vw, 5rem);
-  line-height: 1.45;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  white-space: pre-wrap;
-  text-shadow: 0 0 22px rgba(255, 255, 255, 0.08);
-  opacity: 0;
-  transform: translateY(14px);
-  filter: blur(8px);
-  transition:
-    opacity 0.55s ease,
-    transform 0.55s ease,
-    filter 0.55s ease;
-}
-
-.lyrics.show {
-  opacity: 1;
-  transform: translateY(0);
-  filter: blur(0);
-}
-
-.bottom {
-  display: grid;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  background: var(--glass);
-  backdrop-filter: blur(12px);
-  border-radius: 22px;
-}
-
-.controls {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.btn {
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.08);
-  color: white;
-  padding: 11px 16px;
-  border-radius: 999px;
-  cursor: pointer;
-  font-size: 0.95rem;
-  transition: background 0.2s ease, transform 0.2s ease;
-}
-
-.btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  transform: translateY(-1px);
-}
-
-.timeline {
-  position: relative;
-  width: 100%;
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.09);
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.progress {
-  width: 0%;
-  height: 100%;
-  border-radius: inherit;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 0 18px var(--glow);
-}
-
-.time {
-  font-size: 0.84rem;
-  color: var(--sub);
-  text-align: right;
-}
-
-.start-screen {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: rgba(6, 8, 14, 0.34);
-  backdrop-filter: blur(10px);
-}
-
-.start-card {
-  width: min(92vw, 420px);
-  padding: 28px 22px;
-  border-radius: 24px;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.08);
-  text-align: center;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
-}
-
-.start-card h1 {
-  font-size: 1.8rem;
-  margin-bottom: 10px;
-}
-
-.start-card p {
-  color: var(--sub);
-  line-height: 1.8;
-  font-size: 0.95rem;
-  margin-bottom: 18px;
-}
-
-@media (max-width: 640px) {
-  .app {
-    padding: 12px;
+const songs = [
+  {
+    title: "First Song",
+    artist: "Your Artist",
+    file: "songs/song1.mp3",
+    lyrics: [
+      { start: 0.5, end: 3.2, text: "最初のフレーズ" },
+      { start: 3.4, end: 6.8, text: "やさしく浮かぶ歌詞" },
+      { start: 7.2, end: 11.0, text: "少し遅れて消えていく" }
+    ]
+  },
+  {
+    title: "Second Song",
+    artist: "Your Artist",
+    file: "songs/song2.mp3",
+    lyrics: [
+      { start: 1.0, end: 4.0, text: "二曲目のはじまり" },
+      { start: 4.2, end: 7.5, text: "雰囲気を変えてもいい" },
+      { start: 8.0, end: 12.0, text: "サビだけ大きめに見せるのもあり" }
+    ]
+  },
+  {
+    title: "Third Song",
+    artist: "Your Artist",
+    file: "songs/song3.mp3",
+    lyrics: [
+      { start: 0.8, end: 3.6, text: "三曲目の歌詞" },
+      { start: 4.0, end: 6.5, text: "短く切ると映える" },
+      { start: 7.0, end: 10.5, text: "長文より一節ずつが強い" }
+    ]
   }
-
-  .topbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .song-select {
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .lyrics-wrap {
-    min-height: 140px;
-  }
-
-  .controls {
-    justify-content: center;
-  }
-
-  .time {
-    text-align: center;
-  }
-}
+];
