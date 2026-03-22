@@ -1,12 +1,15 @@
 const songs = [
   {
-    title: "First Song",
-    artist: "Your Artist",
-    file: "songs/song1.mp3",
+    title: "星降る海",
+    artist: "Aqu3ra",
+    file: "songs/星降る海.mp3",
     lyrics: [
-      { start: 0.5, end: 3.2, text: "最初のフレーズ" },
-      { start: 3.4, end: 6.8, text: "やさしく浮かぶ歌詞" },
-      { start: 7.2, end: 11.0, text: "少し遅れて消えていく" }
+      { start: 0.9, end: 3.2, text: "幾千の" },
+      { start: 3.4, end: 6.8, text: "時を巡って今" },
+      { start: 7.0, end: 9.5, text: "僕ら出会えたの" },
+      { start: 9.8, end: 11.0, text: "ほら" },
+      { start: 11.2, end: 14.7, text: "見失わないように" },
+      { start: 15.3, end: 21.5, text: "手を離さないで" },
     ]
   },
   {
