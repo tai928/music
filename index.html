@@ -3,55 +3,69 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lyrics Player</title>
+  <title>Music Player</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
   <div class="app">
     <header class="topbar">
-      <div class="brand">LYRICS PLAYER</div>
-      <select id="songSelect" class="song-select"></select>
+      <div class="brand-wrap">
+        <div class="brand">Music PLAYER</div>
+        <div class="brand-sub">easy to understand</div>
+      </div>
+
+      <select id="songSelect" class="song-select" aria-label="曲を選択"></select>
     </header>
 
     <main class="main">
       <div class="meta">
-        <div class="title" id="songTitle">Title</div>
-        <div class="artist" id="songArtist">Artist</div>
+        <p class="label">NOW PLAYING</p>
+        <h1 class="title" id="songTitle">Title</h1>
+        <p class="artist" id="songArtist">Artist</p>
       </div>
 
-      <div class="lyrics-wrap">
+      <section class="lyrics-stage">
         <div class="lyrics" id="lyrics"></div>
-      </div>
+      </section>
     </main>
 
-    <footer class="bottom">
+    <footer class="player">
       <div class="controls">
-        <button class="btn" id="prevBtn">◀ Prev</button>
-        <button class="btn" id="playPauseBtn">▶ Play</button>
-        <button class="btn" id="nextBtn">Next ▶</button>
+        <button class="btn ghost-btn" id="prevBtn" type="button">◀ Prev</button>
+        <button class="btn primary-btn" id="playPauseBtn" type="button">▶ Play</button>
+        <button class="btn ghost-btn" id="nextBtn" type="button">Next ▶</button>
       </div>
 
-      <div class="timeline" id="timeline">
-        <div class="progress" id="progress"></div>
+      <div class="progress-area">
+        <div class="timeline" id="timeline" aria-label="再生位置">
+          <div class="progress" id="progress"></div>
+        </div>
+        <div class="time" id="timeText">0:00 / 0:00</div>
       </div>
-
-      <div class="time" id="timeText">0:00 / 0:00</div>
     </footer>
   </div>
 
   <div class="start-screen" id="startScreen">
     <div class="start-card">
-      <h1>Music Start</h1>
-      <p>
-        曲を選んで再生。<br>
-        軽量で、雰囲気のある歌詞ページ。
+      <p class="start-label">MUSIC EXPERIENCE</p>
+      <h2>Tap to Start</h2>
+      <p class="start-text">
+        歌詞<br>
+        このように表示されます
       </p>
-      <button class="btn" id="startBtn">再生する</button>
+      <button class="btn primary-btn start-btn" id="startBtn" type="button">
+        再生する
+      </button>
     </div>
   </div>
 
   <audio id="audio" preload="metadata"></audio>
 
+  <script src="songs.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
