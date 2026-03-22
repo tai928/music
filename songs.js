@@ -9,7 +9,7 @@ const songs = [
       { start: 7.0, end: 9.5, text: "僕ら出会えたの" },
       { start: 9.8, end: 11.0, text: "ほら" },
       { start: 11.2, end: 14.7, text: "見失わないように" },
-      { start: 15.3, end: 21.5, text: "手を離さないで" },
+      { start: 15.3, end: 21.5, text: "手を離さないで"effect: "blur"},
     ]
   },
   {
