@@ -59,6 +59,7 @@ function resetLyrics() {
   clearEffectClasses();
   lyricsEl.classList.remove("show", "hide");
   lyricsEl.textContent = "";
+  resetOverlays();
 }
 
 function updateSongMeta(song) {
@@ -106,7 +107,7 @@ function getSafeEffectName(effectName) {
   return EFFECT_CLASSES.includes(className) ? normalized : DEFAULT_EFFECT;
 }
 
-function showLyric(line) {
+function showLyric(line, lineIndex) {
   clearTimeout(lyricChangeTimer);
 
   lyricsEl.classList.remove("show");
@@ -120,6 +121,8 @@ function showLyric(line) {
     lyricsEl.classList.remove("hide");
     lyricsEl.classList.add(`effect-${effectName}`);
     lyricsEl.classList.add("show");
+
+    scheduleLineOverlays(line, lineIndex);
   }, 120);
 }
 
@@ -153,7 +156,7 @@ function updateLyrics() {
 
   const currentSong = songs[currentSongIndex];
   const currentLyric = currentSong.lyrics[currentLyricIndex];
-  showLyric(currentLyric);
+  showLyric(currentLyric, currentLyricIndex);
 }
 
 function updateProgress() {
@@ -361,3 +364,107 @@ window.addEventListener("resize", () => {
 });
 
 setupParticles();
+const fxLayerEl = document.getElementById("fxLayer");
+let overlayTimers = [];
+let playedOverlayKeys = new Set();
+
+function clearOverlayTimers() {
+  overlayTimers.forEach((timerId) => clearTimeout(timerId));
+  overlayTimers = [];
+}
+
+function resetOverlays() {
+  clearOverlayTimers();
+  playedOverlayKeys.clear();
+
+  if (fxLayerEl) {
+    fxLayerEl.innerHTML = "";
+  }
+}
+
+function createSparkleBurst(options = {}) {
+  if (!fxLayerEl) return;
+
+  const count = options.count || 12;
+  const spread = options.spread || 140;
+  const centerX = options.x ?? 50;
+  const centerY = options.y ?? 50;
+
+  for (let i = 0; i < count; i += 1) {
+    const sparkle = document.createElement("span");
+    sparkle.className = "sparkle";
+
+    if (Math.random() > 0.72) {
+      sparkle.classList.add("big");
+    }
+
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.45;
+    const distance = spread * (0.45 + Math.random() * 0.75);
+
+    const tx = `${Math.cos(angle) * distance}px`;
+    const ty = `${Math.sin(angle) * distance}px`;
+
+    sparkle.style.left = `${centerX}%`;
+    sparkle.style.top = `${centerY}%`;
+    sparkle.style.setProperty("--tx", tx);
+    sparkle.style.setProperty("--ty", ty);
+    sparkle.style.animationDuration = `${options.duration || 1000}ms`;
+
+    fxLayerEl.appendChild(sparkle);
+
+    sparkle.addEventListener("animationend", () => {
+      sparkle.remove();
+    });
+  }
+}
+
+function createFlashOverlay(duration = 520) {
+  if (!fxLayerEl) return;
+
+  const flash = document.createElement("div");
+  flash.className = "flash-overlay";
+  flash.style.animationDuration = `${duration}ms`;
+  fxLayerEl.appendChild(flash);
+
+  flash.addEventListener("animationend", () => {
+    flash.remove();
+  });
+}
+
+function scheduleLineOverlays(line, lineIndex) {
+  clearOverlayTimers();
+
+  if (!line || !Array.isArray(line.overlays)) {
+    return;
+  }
+
+  line.overlays.forEach((overlay, overlayIndex) => {
+    if (!overlay || typeof overlay !== "object") return;
+
+    const overlayAt = typeof overlay.at === "number" ? overlay.at : line.start;
+    const delay = Math.max(0, (overlayAt - audio.currentTime) * 1000);
+
+    const key = `${currentSongIndex}-${lineIndex}-${overlayIndex}-${overlayAt}`;
+
+    const timerId = setTimeout(() => {
+      if (playedOverlayKeys.has(key)) return;
+      playedOverlayKeys.add(key);
+
+      if (overlay.type === "sparkle") {
+        createSparkleBurst({
+          count: overlay.count || 14,
+          spread: overlay.spread || 120,
+          duration: overlay.duration || 1000,
+          x: overlay.x ?? 50,
+          y: overlay.y ?? 50
+        });
+      }
+
+      if (overlay.type === "flash") {
+        createFlashOverlay(overlay.duration || 520);
+      }
+    }, delay);
+
+    overlayTimers.push(timerId);
+  });
+}
