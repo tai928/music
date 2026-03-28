@@ -10,7 +10,7 @@ const songs = [
       { start: 9.8, end: 11.0, text: "ほら" },
       { start: 11.2, end: 14.7, text: "見失わないように" },
       { start: 15.3, end: 21.5, text: "手を離さないで", effect:["drift", "blur"],
-       overlays: [{ type: "sparkle", at: 0.1,},{ type: "sparkle", at: 4.0,}]},
+       overlays: [{ type: "sparkle", at: 15.5,},{ type: "sparkle", at: 19.5,}]},
       { start: 38.6, end: 42.2, text: "ねぇ耳を澄ませて" },
       { start: 42.9, end: 47.6, text: "星の降る音が聞こえるでしょう？" },
       { start: 47.0, end: 51.2, text: "もっと近くに来て" },
