@@ -239,3 +239,125 @@ audio.addEventListener("ended", () => {
 
 renderSongOptions();
 loadSong(0);
+
+const particleCanvas = document.getElementById("particleCanvas");
+const particleCtx = particleCanvas.getContext("2d");
+
+const PARTICLE_COUNT = 42;
+const PARTICLE_COLOR = "rgba(255, 255, 255, 0.22)";
+const PARTICLE_LINK_COLOR = "rgba(180, 205, 255, 0.08)";
+
+let particles = [];
+let animationFrameId = null;
+
+function resizeParticleCanvas() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  particleCanvas.width = Math.floor(width * dpr);
+  particleCanvas.height = Math.floor(height * dpr);
+  particleCanvas.style.width = `${width}px`;
+  particleCanvas.style.height = `${height}px`;
+
+  particleCtx.setTransform(1, 0, 0, 1, 0, 0);
+  particleCtx.scale(dpr, dpr);
+}
+
+function createParticle(width, height) {
+  const size = Math.random() * 2.2 + 0.6;
+
+  return {
+    x: Math.random() * width,
+    y: Math.random() * height,
+    vx: (Math.random() - 0.5) * 0.28,
+    vy: (Math.random() - 0.5) * 0.28,
+    size,
+    alpha: Math.random() * 0.35 + 0.08
+  };
+}
+
+function initParticles() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  particles = Array.from({ length: PARTICLE_COUNT }, () =>
+    createParticle(width, height)
+  );
+}
+
+function updateParticles() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  for (const particle of particles) {
+    particle.x += particle.vx;
+    particle.y += particle.vy;
+
+    if (particle.x < -20) particle.x = width + 20;
+    if (particle.x > width + 20) particle.x = -20;
+    if (particle.y < -20) particle.y = height + 20;
+    if (particle.y > height + 20) particle.y = -20;
+  }
+}
+
+function drawParticles() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  particleCtx.clearRect(0, 0, width, height);
+
+  for (let i = 0; i < particles.length; i += 1) {
+    const a = particles[i];
+
+    for (let j = i + 1; j < particles.length; j += 1) {
+      const b = particles[j];
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist < 120) {
+        const alpha = (1 - dist / 120) * 0.22;
+        particleCtx.strokeStyle = `rgba(180, 205, 255, ${alpha * 0.35})`;
+        particleCtx.lineWidth = 1;
+        particleCtx.beginPath();
+        particleCtx.moveTo(a.x, a.y);
+        particleCtx.lineTo(b.x, b.y);
+        particleCtx.stroke();
+      }
+    }
+  }
+
+  for (const particle of particles) {
+    particleCtx.beginPath();
+    particleCtx.fillStyle = `rgba(255, 255, 255, ${particle.alpha})`;
+    particleCtx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+    particleCtx.fill();
+  }
+}
+
+function animateParticles() {
+  updateParticles();
+  drawParticles();
+  animationFrameId = requestAnimationFrame(animateParticles);
+}
+
+function setupParticles() {
+  if (!particleCanvas || !particleCtx) return;
+
+  resizeParticleCanvas();
+  initParticles();
+
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+  }
+
+  animateParticles();
+}
+
+window.addEventListener("resize", () => {
+  resizeParticleCanvas();
+  initParticles();
+});
+
+setupParticles();
