@@ -27,8 +27,7 @@ const songs = [
       { start: 69.5, end: 70.0, text: "la-" , effect: "pop" },
       { start: 70.0, end: 71.7, text: "la-!!" , effect: "pop" },
       { start: 71.2, end: 73.6, text: "暗がりの道も" },
-      { start: 73.6, end: 78.6, text: "月明かりが照らすの",
-       overlays: [{ type: "flash", at: 4.50,duration: 2000,count: 20,spread: 220,x: 50,y: 46}]},
+      { start: 73.6, end: 78.6, text: "月明かりが照らすの"},
     ]
   },
   {
