@@ -10,7 +10,8 @@ const songs = [
       { start: 9.8, end: 11.0, text: "ほら" },
       { start: 11.2, end: 14.7, text: "見失わないように" },
       { start: 15.3, end: 21.5, text: "手を離さないで", effect: "chorus",
-       overlays: [{ type: "sparkle", at: 4.00,duration: 2000,count: 20,spread: 220,x: 50,y: 46}]},
+       overlays: [{ type: "sparkle", at: 4.00,duration: 2000,count: 20,spread: 220,x: 50,y: 46}]   
+        overlays: [{ type: "flash", at: 4.50,duration: 2000,count: 20,spread: 220,x: 50,y: 46}]},
       { start: 38.6, end: 42.2, text: "ねぇ耳を澄ませて" },
       { start: 42.9, end: 47.6, text: "星の降る音が聞こえるでしょう？" },
       { start: 47.0, end: 51.2, text: "もっと近くに来て" },
