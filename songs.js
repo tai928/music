@@ -9,7 +9,8 @@ const songs = [
       { start: 7.0, end: 9.5, text: "僕ら出会えたの" },
       { start: 9.8, end: 11.0, text: "ほら" },
       { start: 11.2, end: 14.7, text: "見失わないように" },
-      { start: 15.3, end: 21.5, text: "手を離さないで", effect: "chorus" },
+      { start: 15.3, end: 21.5, text: "手を離さないで", effect: "chorus",
+       overlays: [{ type: "sparkle", at: 0.70,duration: 1100,count: 10,spread: 110,x: 50,y: 46}]},
       { start: 38.6, end: 42.2, text: "ねぇ耳を澄ませて" },
       { start: 42.9, end: 47.6, text: "星の降る音が聞こえるでしょう？" },
       { start: 47.0, end: 51.2, text: "もっと近くに来て" },
@@ -68,5 +69,43 @@ const songs = [
     { start: 3.2, end: 6.2, text: "text" },
     { start: 6.5, end: 9.8, text: "text" }
   ]
-}
+},
+  const songs = [
+  {
+    title: "星降る海",
+    artist: "Your Artist",
+    file: "songs/hoshifuru-umi.mp3",
+    lyrics: [
+      {start: 0.50, end: 3.20, text: "幾千の時を巡って今",  effect: "float", 
+       overlays: [{ type: "sparkle", at: 0.70,duration: 1100,count: 10,spread: 110,x: 50,y: 46}]},
+      {       start: 3.30,
+        end: 5.80,
+        text: "僕ら出会えたの",
+        effect: "blur"
+      },
+      {
+        start: 25.00,
+        end: 29.20,
+        text: "手を取って踊りましょう",
+        effect: "chorus",
+        overlays: [
+          {
+            type: "flash",
+            at: 25.00,
+            duration: 420
+          },
+          {
+            type: "sparkle",
+            at: 25.10,
+            duration: 1200,
+            count: 18,
+            spread: 150,
+            x: 50,
+            y: 50
+          }
+        ]
+      }
+    ]
+  }
+];
 ];
