@@ -1,8 +1,10 @@
 const audio = document.getElementById("audio");
 const lyricsEl = document.getElementById("lyrics");
+const lyricsStageEl = document.getElementById("lyricsStage");
 const songTitleEl = document.getElementById("songTitle");
 const songArtistEl = document.getElementById("songArtist");
 const songSelectEl = document.getElementById("songSelect");
+const spectrumModeSelectEl = document.getElementById("spectrumModeSelect");
 const playPauseBtn = document.getElementById("playPauseBtn");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
@@ -14,6 +16,8 @@ const startScreenEl = document.getElementById("startScreen");
 const fxLayerEl = document.getElementById("fxLayer");
 const particleCanvas = document.getElementById("particleCanvas");
 const particleCtx = particleCanvas?.getContext("2d");
+const spectrumCanvas = document.getElementById("spectrumCanvas");
+const spectrumCtx = spectrumCanvas?.getContext("2d");
 
 const EFFECT_CLASSES = [
   "effect-fade",
@@ -25,15 +29,22 @@ const EFFECT_CLASSES = [
 ];
 
 const DEFAULT_EFFECT = "fade";
+const SPECTRUM_MODES = ["wave", "bars", "dots"];
 const PARTICLE_COUNT = 42;
 
 let currentSongIndex = 0;
 let currentLyricIndex = -1;
 let lyricChangeTimer = null;
-let overlayTimers = [];
-let playedOverlayKeys = new Set();
 let particles = [];
-let animationFrameId = null;
+let particleAnimationId = null;
+let spectrumAnimationId = null;
+let playedOverlayKeys = new Set();
+let audioContext = null;
+let analyserNode = null;
+let sourceNode = null;
+let frequencyData = null;
+let spectrumReady = false;
+let spectrumMode = "wave";
 
 function formatTime(seconds) {
   if (!Number.isFinite(seconds)) return "0:00";
@@ -43,7 +54,10 @@ function formatTime(seconds) {
 }
 
 function renderSongOptions() {
+  if (!songSelectEl) return;
+
   songSelectEl.innerHTML = "";
+
   songs.forEach((song, index) => {
     const option = document.createElement("option");
     option.value = String(index);
@@ -53,16 +67,32 @@ function renderSongOptions() {
 }
 
 function clearEffectClasses() {
+  if (!lyricsEl) return;
   lyricsEl.classList.remove(...EFFECT_CLASSES);
 }
 
-function clearOverlayTimers() {
-  overlayTimers.forEach((timerId) => clearTimeout(timerId));
-  overlayTimers = [];
+function getSafeEffectName(effectName) {
+  if (typeof effectName !== "string") return DEFAULT_EFFECT;
+  const normalized = effectName.trim().toLowerCase();
+  const className = `effect-${normalized}`;
+  return EFFECT_CLASSES.includes(className) ? normalized : DEFAULT_EFFECT;
+}
+
+function getSafeEffects(line) {
+  if (Array.isArray(line.effects) && line.effects.length > 0) {
+    return line.effects.map(getSafeEffectName);
+  }
+
+  return [getSafeEffectName(line.effect)];
+}
+
+function getSafeSpectrumMode(mode) {
+  if (typeof mode !== "string") return "wave";
+  const normalized = mode.trim().toLowerCase();
+  return SPECTRUM_MODES.includes(normalized) ? normalized : "wave";
 }
 
 function resetOverlays() {
-  clearOverlayTimers();
   playedOverlayKeys.clear();
   if (fxLayerEl) {
     fxLayerEl.innerHTML = "";
@@ -73,15 +103,28 @@ function resetLyrics() {
   clearTimeout(lyricChangeTimer);
   currentLyricIndex = -1;
   clearEffectClasses();
-  lyricsEl.classList.remove("show", "hide");
-  lyricsEl.textContent = "";
+
+  if (lyricsEl) {
+    lyricsEl.classList.remove("show", "hide");
+    lyricsEl.textContent = "";
+  }
+
   resetOverlays();
 }
 
 function updateSongMeta(song) {
-  songTitleEl.textContent = song.title;
-  songArtistEl.textContent = song.artist;
-  songSelectEl.value = String(currentSongIndex);
+  if (songTitleEl) songTitleEl.textContent = song.title;
+  if (songArtistEl) songArtistEl.textContent = song.artist;
+  if (songSelectEl) songSelectEl.value = String(currentSongIndex);
+}
+
+async function autoPlayCurrentSong() {
+  try {
+    await resumeSpectrumContext();
+    await audio.play();
+  } catch (error) {
+    console.error("再生エラー:", error);
+  }
 }
 
 function loadSong(index, shouldAutoPlay = false) {
@@ -91,31 +134,160 @@ function loadSong(index, shouldAutoPlay = false) {
   updateSongMeta(song);
   resetLyrics();
 
+  spectrumMode = getSafeSpectrumMode(song.spectrum);
+  if (spectrumModeSelectEl) {
+    spectrumModeSelectEl.value = spectrumMode;
+  }
+
   audio.src = song.file;
   audio.load();
 
-  progressEl.style.width = "0%";
-  timeTextEl.textContent = "0:00 / 0:00";
+  if (progressEl) progressEl.style.width = "0%";
+  if (timeTextEl) timeTextEl.textContent = "0:00 / 0:00";
 
   if (shouldAutoPlay) {
-    audio.play().catch((error) => {
-      console.error("再生エラー:", error);
-    });
+    autoPlayCurrentSong();
   }
 }
 
+function getCurrentSong() {
+  return songs[currentSongIndex];
+}
+
 function getCurrentLyricIndex(currentTime) {
-  const currentSong = songs[currentSongIndex];
+  const currentSong = getCurrentSong();
+  if (!currentSong || !Array.isArray(currentSong.lyrics)) return -1;
+
   return currentSong.lyrics.findIndex((line) => (
     currentTime >= line.start && currentTime < line.end
   ));
 }
 
-function getSafeEffectName(effectName) {
-  if (typeof effectName !== "string") return DEFAULT_EFFECT;
-  const normalized = effectName.trim().toLowerCase();
-  const className = `effect-${normalized}`;
-  return EFFECT_CLASSES.includes(className) ? normalized : DEFAULT_EFFECT;
+function showLyric(line) {
+  if (!lyricsEl) return;
+
+  clearTimeout(lyricChangeTimer);
+
+  lyricsEl.classList.remove("show");
+  lyricsEl.classList.add("hide");
+  clearEffectClasses();
+
+  const effects = getSafeEffects(line);
+
+  lyricChangeTimer = setTimeout(() => {
+    lyricsEl.textContent = line.text;
+    lyricsEl.classList.remove("hide");
+
+    effects.forEach((effectName) => {
+      lyricsEl.classList.add(`effect-${effectName}`);
+    });
+
+    lyricsEl.classList.add("show");
+  }, 120);
+}
+
+function clearLyric() {
+  if (!lyricsEl) return;
+
+  clearTimeout(lyricChangeTimer);
+
+  lyricsEl.classList.remove("show");
+  lyricsEl.classList.add("hide");
+
+  lyricChangeTimer = setTimeout(() => {
+    if (currentLyricIndex === -1) {
+      lyricsEl.textContent = "";
+      clearEffectClasses();
+    }
+  }, 260);
+}
+
+function updateLyrics() {
+  const newLyricIndex = getCurrentLyricIndex(audio.currentTime);
+
+  if (newLyricIndex === currentLyricIndex) return;
+
+  currentLyricIndex = newLyricIndex;
+
+  if (currentLyricIndex === -1) {
+    clearLyric();
+    return;
+  }
+
+  const currentSong = getCurrentSong();
+  const currentLyric = currentSong.lyrics[currentLyricIndex];
+  showLyric(currentLyric);
+}
+
+function updateProgress() {
+  const currentTime = audio.currentTime;
+  const duration = audio.duration || 0;
+  const ratio = duration > 0 ? currentTime / duration : 0;
+
+  if (progressEl) {
+    progressEl.style.width = `${ratio * 100}%`;
+  }
+
+  if (timeTextEl) {
+    timeTextEl.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+  }
+}
+
+function triggerOverlay(overlay) {
+  if (!overlay || typeof overlay !== "object") return;
+
+  if (overlay.type === "sparkle") {
+    createSparkleBurst({
+      count: overlay.count || 12,
+      spread: overlay.spread || 140,
+      duration: overlay.duration || 1000,
+      x: overlay.x,
+      y: overlay.y
+    });
+  }
+
+  if (overlay.type === "flash") {
+    createFlashOverlay(overlay.duration || 520);
+  }
+}
+
+function updateOverlays() {
+  const currentSong = getCurrentSong();
+  const currentTime = audio.currentTime;
+
+  if (!currentSong || !Array.isArray(currentSong.lyrics)) return;
+
+  currentSong.lyrics.forEach((line, lineIndex) => {
+    if (!Array.isArray(line.overlays)) return;
+
+    line.overlays.forEach((overlay, overlayIndex) => {
+      const overlayAt = typeof overlay.at === "number" ? overlay.at : line.start;
+      const key = `${currentSongIndex}-${lineIndex}-${overlayIndex}`;
+
+      if (!playedOverlayKeys.has(key) && currentTime >= overlayAt) {
+        playedOverlayKeys.add(key);
+        triggerOverlay(overlay);
+      }
+    });
+  });
+}
+
+function getAutoOverlayPosition() {
+  if (!lyricsEl) {
+    return { x: 50, y: 50 };
+  }
+
+  const rect = lyricsEl.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+
+  const x = (centerX / window.innerWidth) * 100;
+  const y = (centerY / window.innerHeight) * 100;
+
+  return {
+    x: x + (Math.random() - 0.5) * 8,
+    y: y + (Math.random() - 0.5) * 5
+  };
 }
 
 function createSparkleBurst(options = {}) {
@@ -123,8 +295,9 @@ function createSparkleBurst(options = {}) {
 
   const count = options.count || 12;
   const spread = options.spread || 140;
-  const centerX = options.x ?? 50;
-  const centerY = options.y ?? 50;
+  const autoPos = getAutoOverlayPosition();
+  const centerX = options.x ?? autoPos.x;
+  const centerY = options.y ?? autoPos.y;
 
   for (let i = 0; i < count; i += 1) {
     const sparkle = document.createElement("span");
@@ -158,106 +331,39 @@ function createFlashOverlay(duration = 520) {
   flash.addEventListener("animationend", () => flash.remove());
 }
 
-function scheduleLineOverlays(line, lineIndex) {
-  clearOverlayTimers();
-
-  if (!line || !Array.isArray(line.overlays)) {
-    return;
+async function startPlayback() {
+  if (startScreenEl) {
+    startScreenEl.style.display = "none";
   }
 
-  line.overlays.forEach((overlay, overlayIndex) => {
-    if (!overlay || typeof overlay !== "object") return;
-
-    const overlayAt = typeof overlay.at === "number" ? overlay.at : line.start;
-    const delay = Math.max(0, (overlayAt - audio.currentTime) * 1000);
-    const key = `${currentSongIndex}-${lineIndex}-${overlayIndex}-${overlayAt}`;
-
-    const timerId = setTimeout(() => {
-      if (playedOverlayKeys.has(key)) return;
-      playedOverlayKeys.add(key);
-
-      if (overlay.type === "sparkle") {
-        createSparkleBurst({
-          count: overlay.count || 14,
-          spread: overlay.spread || 120,
-          duration: overlay.duration || 1000,
-          x: overlay.x ?? 50,
-          y: overlay.y ?? 50
-        });
-      }
-
-      if (overlay.type === "flash") {
-        createFlashOverlay(overlay.duration || 520);
-      }
-    }, delay);
-
-    overlayTimers.push(timerId);
-  });
-}
-
-function showLyric(line, lineIndex) {
-  clearTimeout(lyricChangeTimer);
-
-  lyricsEl.classList.remove("show");
-  lyricsEl.classList.add("hide");
-  clearEffectClasses();
-
-  const effectName = getSafeEffectName(line.effect);
-
-  lyricChangeTimer = setTimeout(() => {
-    lyricsEl.textContent = line.text;
-    lyricsEl.classList.remove("hide");
-    lyricsEl.classList.add(`effect-${effectName}`);
-    lyricsEl.classList.add("show");
-    scheduleLineOverlays(line, lineIndex);
-  }, 120);
-}
-
-function clearLyric() {
-  clearTimeout(lyricChangeTimer);
-
-  lyricsEl.classList.remove("show");
-  lyricsEl.classList.add("hide");
-
-  lyricChangeTimer = setTimeout(() => {
-    if (currentLyricIndex === -1) {
-      lyricsEl.textContent = "";
-      clearEffectClasses();
+  try {
+    if (!spectrumReady) {
+      setupSpectrum();
     }
-  }, 260);
-}
 
-function updateLyrics() {
-  const newLyricIndex = getCurrentLyricIndex(audio.currentTime);
+    await resumeSpectrumContext();
+    await audio.play();
+  } catch (error) {
+    console.error("再生エラー:", error);
 
-  if (newLyricIndex === currentLyricIndex) return;
-
-  currentLyricIndex = newLyricIndex;
-
-  if (currentLyricIndex === -1) {
-    clearLyric();
-    return;
+    if (startScreenEl) {
+      startScreenEl.style.display = "flex";
+    }
   }
-
-  const currentSong = songs[currentSongIndex];
-  const currentLyric = currentSong.lyrics[currentLyricIndex];
-  showLyric(currentLyric, currentLyricIndex);
 }
 
-function updateProgress() {
-  const currentTime = audio.currentTime;
-  const duration = audio.duration || 0;
-  const ratio = duration > 0 ? currentTime / duration : 0;
-
-  progressEl.style.width = `${ratio * 100}%`;
-  timeTextEl.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
-}
-
-function togglePlayPause() {
+async function togglePlayPause() {
   if (audio.paused) {
-    audio.play().catch((error) => {
+    try {
+      if (!spectrumReady) {
+        setupSpectrum();
+      }
+
+      await resumeSpectrumContext();
+      await audio.play();
+    } catch (error) {
       console.error("再生エラー:", error);
-    });
+    }
   } else {
     audio.pause();
   }
@@ -274,22 +380,15 @@ function playPrevSong() {
 }
 
 function seekAudio(event) {
+  if (!timelineEl) return;
+
   const rect = timelineEl.getBoundingClientRect();
   const positionX = event.clientX - rect.left;
   const ratio = Math.max(0, Math.min(1, positionX / rect.width));
   const duration = audio.duration || 0;
+
   audio.currentTime = ratio * duration;
-}
-
-async function startPlayback() {
-  startScreenEl.style.display = "none";
-
-  try {
-    await audio.play();
-  } catch (error) {
-    console.error("再生エラー:", error);
-    startScreenEl.style.display = "flex";
-  }
+  playedOverlayKeys.clear();
 }
 
 function resizeParticleCanvas() {
@@ -366,7 +465,7 @@ function drawParticles() {
 function animateParticles() {
   updateParticles();
   drawParticles();
-  animationFrameId = requestAnimationFrame(animateParticles);
+  particleAnimationId = requestAnimationFrame(animateParticles);
 }
 
 function setupParticles() {
@@ -375,47 +474,243 @@ function setupParticles() {
   resizeParticleCanvas();
   initParticles();
 
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId);
+  if (particleAnimationId) {
+    cancelAnimationFrame(particleAnimationId);
   }
 
   animateParticles();
 }
 
-songSelectEl.addEventListener("change", (event) => {
-  const nextIndex = Number(event.target.value);
-  const shouldResume = !audio.paused;
-  loadSong(nextIndex, shouldResume);
-});
+function resizeSpectrumCanvas() {
+  if (!spectrumCanvas || !spectrumCtx) return;
 
-playPauseBtn.addEventListener("click", togglePlayPause);
-prevBtn.addEventListener("click", playPrevSong);
-nextBtn.addEventListener("click", playNextSong);
-timelineEl.addEventListener("click", seekAudio);
-startBtn.addEventListener("click", startPlayback);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const width = spectrumCanvas.clientWidth || 760;
+  const height = spectrumCanvas.clientHeight || 72;
+
+  spectrumCanvas.width = Math.floor(width * dpr);
+  spectrumCanvas.height = Math.floor(height * dpr);
+
+  spectrumCtx.setTransform(1, 0, 0, 1, 0, 0);
+  spectrumCtx.scale(dpr, dpr);
+}
+
+function setupSpectrum() {
+  if (!audio || !spectrumCanvas || !spectrumCtx || spectrumReady) return;
+
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return;
+
+  audioContext = new AudioContextClass();
+  analyserNode = audioContext.createAnalyser();
+  analyserNode.fftSize = 256;
+  analyserNode.smoothingTimeConstant = 0.86;
+
+  sourceNode = audioContext.createMediaElementSource(audio);
+  sourceNode.connect(analyserNode);
+  analyserNode.connect(audioContext.destination);
+
+  frequencyData = new Uint8Array(analyserNode.frequencyBinCount);
+  spectrumReady = true;
+
+  resizeSpectrumCanvas();
+  drawSpectrum();
+}
+
+async function resumeSpectrumContext() {
+  if (!audioContext) return;
+  if (audioContext.state === "suspended") {
+    await audioContext.resume();
+  }
+}
+
+function drawBarsSpectrum(width, height) {
+  const barCount = 48;
+  const step = Math.max(1, Math.floor(frequencyData.length / barCount));
+  const gap = 4;
+  const barWidth = (width - gap * (barCount - 1)) / barCount;
+  const baseY = height / 2;
+
+  for (let i = 0; i < barCount; i += 1) {
+    const value = frequencyData[i * step] / 255;
+    const boosted = Math.pow(value, 1.4);
+    const barHeight = Math.max(2, boosted * (height * 0.72));
+    const x = i * (barWidth + gap);
+    const y = baseY - barHeight / 2;
+
+    spectrumCtx.fillStyle = `rgba(255, 255, 255, ${0.18 + boosted * 0.75})`;
+    spectrumCtx.fillRect(x, y, barWidth, barHeight);
+  }
+}
+
+function drawWaveSpectrum(width, height) {
+  const pointCount = 64;
+  const step = Math.max(1, Math.floor(frequencyData.length / pointCount));
+  const centerY = height / 2;
+
+  spectrumCtx.beginPath();
+  spectrumCtx.lineWidth = 2;
+  spectrumCtx.strokeStyle = "rgba(255, 255, 255, 0.88)";
+
+  for (let i = 0; i < pointCount; i += 1) {
+    const value = frequencyData[i * step] / 255;
+    const boosted = Math.pow(value, 1.5);
+    const x = (width / (pointCount - 1)) * i;
+    const y = centerY - boosted * (height * 0.34);
+
+    if (i === 0) {
+      spectrumCtx.moveTo(x, y);
+    } else {
+      spectrumCtx.lineTo(x, y);
+    }
+  }
+
+  spectrumCtx.stroke();
+
+  spectrumCtx.beginPath();
+  spectrumCtx.lineWidth = 1;
+  spectrumCtx.strokeStyle = "rgba(180, 205, 255, 0.35)";
+
+  for (let i = 0; i < pointCount; i += 1) {
+    const value = frequencyData[i * step] / 255;
+    const boosted = Math.pow(value, 1.5);
+    const x = (width / (pointCount - 1)) * i;
+    const y = centerY + boosted * (height * 0.34);
+
+    if (i === 0) {
+      spectrumCtx.moveTo(x, y);
+    } else {
+      spectrumCtx.lineTo(x, y);
+    }
+  }
+
+  spectrumCtx.stroke();
+}
+
+function drawDotsSpectrum(width, height) {
+  const dotCount = 42;
+  const step = Math.max(1, Math.floor(frequencyData.length / dotCount));
+  const baseY = height / 2;
+
+  for (let i = 0; i < dotCount; i += 1) {
+    const value = frequencyData[i * step] / 255;
+    const boosted = Math.pow(value, 1.35);
+    const x = (width / (dotCount - 1)) * i;
+    const offset = boosted * (height * 0.28);
+    const radius = 1.6 + boosted * 2.8;
+
+    spectrumCtx.beginPath();
+    spectrumCtx.fillStyle = `rgba(255, 255, 255, ${0.18 + boosted * 0.72})`;
+    spectrumCtx.arc(x, baseY - offset, radius, 0, Math.PI * 2);
+    spectrumCtx.fill();
+
+    spectrumCtx.beginPath();
+    spectrumCtx.fillStyle = `rgba(180, 205, 255, ${0.12 + boosted * 0.35})`;
+    spectrumCtx.arc(x, baseY + offset, radius * 0.9, 0, Math.PI * 2);
+    spectrumCtx.fill();
+  }
+}
+
+function drawSpectrum() {
+  if (
+    !spectrumReady ||
+    !spectrumCanvas ||
+    !spectrumCtx ||
+    !analyserNode ||
+    !frequencyData
+  ) {
+    return;
+  }
+
+  const width = spectrumCanvas.clientWidth || 760;
+  const height = spectrumCanvas.clientHeight || 72;
+
+  analyserNode.getByteFrequencyData(frequencyData);
+  spectrumCtx.clearRect(0, 0, width, height);
+
+  if (spectrumMode === "bars") {
+    drawBarsSpectrum(width, height);
+  } else if (spectrumMode === "dots") {
+    drawDotsSpectrum(width, height);
+  } else {
+    drawWaveSpectrum(width, height);
+  }
+
+  spectrumAnimationId = requestAnimationFrame(drawSpectrum);
+}
+
+function stopSpectrum() {
+  if (spectrumAnimationId) {
+    cancelAnimationFrame(spectrumAnimationId);
+    spectrumAnimationId = null;
+  }
+
+  if (spectrumCtx && spectrumCanvas) {
+    const width = spectrumCanvas.clientWidth || 760;
+    const height = spectrumCanvas.clientHeight || 72;
+    spectrumCtx.clearRect(0, 0, width, height);
+  }
+}
+
+if (songSelectEl) {
+  songSelectEl.addEventListener("change", (event) => {
+    const nextIndex = Number(event.target.value);
+    const shouldResume = !audio.paused;
+    loadSong(nextIndex, shouldResume);
+  });
+}
+
+if (spectrumModeSelectEl) {
+  spectrumModeSelectEl.addEventListener("change", (event) => {
+    spectrumMode = getSafeSpectrumMode(event.target.value);
+  });
+}
+
+playPauseBtn?.addEventListener("click", togglePlayPause);
+prevBtn?.addEventListener("click", playPrevSong);
+nextBtn?.addEventListener("click", playNextSong);
+timelineEl?.addEventListener("click", seekAudio);
+startBtn?.addEventListener("click", startPlayback);
 
 audio.addEventListener("timeupdate", () => {
   updateLyrics();
   updateProgress();
+  updateOverlays();
 });
 
 audio.addEventListener("loadedmetadata", updateProgress);
 
 audio.addEventListener("play", () => {
-  playPauseBtn.textContent = "⏸ Pause";
+  if (playPauseBtn) {
+    playPauseBtn.textContent = "⏸ Pause";
+  }
+
+  if (!spectrumReady) {
+    setupSpectrum();
+  }
+
+  if (!spectrumAnimationId) {
+    drawSpectrum();
+  }
 });
 
 audio.addEventListener("pause", () => {
-  playPauseBtn.textContent = "▶ Play";
+  if (playPauseBtn) {
+    playPauseBtn.textContent = "▶ Play";
+  }
+
+  stopSpectrum();
 });
 
 audio.addEventListener("ended", () => {
+  stopSpectrum();
   playNextSong();
 });
 
 window.addEventListener("resize", () => {
   resizeParticleCanvas();
   initParticles();
+  resizeSpectrumCanvas();
 });
 
 renderSongOptions();
