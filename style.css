@@ -54,6 +54,16 @@ body::before {
     linear-gradient(rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0.01));
 }
 
+.particle-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.9;
+}
+
 .bg-orb {
   position: absolute;
   border-radius: 50%;
@@ -143,9 +153,16 @@ body::before {
   letter-spacing: 0.04em;
 }
 
+.topbar-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .song-select {
   appearance: none;
-  min-width: 210px;
+  min-width: 180px;
   max-width: 52vw;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.08);
@@ -200,6 +217,7 @@ body::before {
 }
 
 .lyrics-stage {
+  position: relative;
   width: min(100%, 980px);
   min-height: 210px;
   margin: 0 auto;
@@ -207,6 +225,13 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.fx-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
 }
 
 .lyrics {
@@ -241,7 +266,6 @@ body::before {
   filter: blur(10px);
 }
 
-/* default fallback */
 .lyrics.effect-fade {
   transform: translateY(0) scale(1);
   filter: blur(0);
@@ -252,7 +276,6 @@ body::before {
   filter: blur(0);
 }
 
-/* 1. float */
 .lyrics.effect-float {
   transform: translateY(22px) scale(1);
   filter: blur(0);
@@ -263,7 +286,6 @@ body::before {
   filter: blur(0);
 }
 
-/* 2. blur */
 .lyrics.effect-blur {
   transform: translateY(10px) scale(1);
   filter: blur(14px);
@@ -274,7 +296,6 @@ body::before {
   filter: blur(0);
 }
 
-/* 3. pop */
 .lyrics.effect-pop {
   transform: translateY(14px) scale(0.94);
   filter: blur(4px);
@@ -285,7 +306,6 @@ body::before {
   filter: blur(0);
 }
 
-/* 4. chorus */
 .lyrics.effect-chorus {
   transform: translateY(18px) scale(0.98);
   filter: blur(8px);
@@ -302,7 +322,6 @@ body::before {
     0 0 80px rgba(180, 205, 255, 0.2);
 }
 
-/* 5. drift */
 .lyrics.effect-drift {
   transform: translateX(-20px) translateY(8px) scale(1);
   filter: blur(8px);
@@ -311,23 +330,6 @@ body::before {
 .lyrics.effect-drift.show {
   transform: translateX(0) translateY(0) scale(1);
   filter: blur(0);
-}
-.lyrics-stage {
-  position: relative;
-  width: min(100%, 980px);
-  min-height: 210px;
-  margin: 0 auto;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.fx-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
 }
 
 .sparkle {
@@ -365,33 +367,6 @@ body::before {
   height: 2px;
 }
 
-@keyframes sparkleBurst {
-  0% {
-    opacity: 0;
-    transform:
-      translate(-50%, -50%)
-      translate(0, 0)
-      scale(0.2)
-      rotate(0deg);
-    filter: blur(4px);
-  }
-
-  20% {
-    opacity: 1;
-    filter: blur(0);
-  }
-
-  100% {
-    opacity: 0;
-    transform:
-      translate(-50%, -50%)
-      translate(var(--tx), var(--ty))
-      scale(1.15)
-      rotate(90deg);
-    filter: blur(1px);
-  }
-}
-
 .sparkle.big::before {
   height: 20px;
 }
@@ -403,32 +378,50 @@ body::before {
 .flash-overlay {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at center, rgba(255,255,255,0.12), transparent 55%);
+  background: radial-gradient(circle at center, rgba(255,255,255,0.12), transparent 55%);
   opacity: 0;
   animation: flashPulse 520ms ease-out forwards;
 }
 
-@keyframes flashPulse {
+@keyframes sparkleBurst {
   0% {
     opacity: 0;
+    transform: translate(-50%, -50%) translate(0, 0) scale(0.2) rotate(0deg);
+    filter: blur(4px);
   }
-  25% {
+  20% {
     opacity: 1;
+    filter: blur(0);
   }
   100% {
     opacity: 0;
+    transform: translate(-50%, -50%) translate(var(--tx), var(--ty)) scale(1.15) rotate(90deg);
+    filter: blur(1px);
   }
 }
 
-.particle-canvas {
-  position: fixed;
-  inset: 0;
+@keyframes flashPulse {
+  0% { opacity: 0; }
+  25% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.spectrum-wrap {
+  width: min(100%, 760px);
+  height: 72px;
+  margin: 8px auto 0;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.92;
+}
+
+.spectrum-canvas {
   width: 100%;
   height: 100%;
+  display: block;
   pointer-events: none;
-  z-index: 0;
-  opacity: 0.9;
 }
 
 .player {
@@ -586,6 +579,10 @@ body::before {
     align-items: stretch;
   }
 
+  .topbar-controls {
+    width: 100%;
+  }
+
   .song-select {
     width: 100%;
     max-width: 100%;
@@ -599,94 +596,8 @@ body::before {
   .time {
     text-align: center;
   }
-  .particle-canvas {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.9;
-}
 
-.fx-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.sparkle {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  left: 50%;
-  top: 50%;
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.4) rotate(0deg);
-  animation: sparkleBurst 1s cubic-bezier(.22, 1, .36, 1) forwards;
-}
-
-.sparkle::before,
-.sparkle::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  background: rgba(255,255,255,0.95);
-  box-shadow:
-    0 0 10px rgba(255,255,255,0.7),
-    0 0 18px rgba(180,205,255,0.35);
-  transform: translate(-50%, -50%);
-  border-radius: 999px;
-}
-
-.sparkle::before {
-  width: 2px;
-  height: 14px;
-}
-
-.sparkle::after {
-  width: 14px;
-  height: 2px;
-}
-
-.sparkle.big::before {
-  height: 20px;
-}
-
-.sparkle.big::after {
-  width: 20px;
-}
-
-.flash-overlay {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at center, rgba(255,255,255,0.12), transparent 55%);
-  opacity: 0;
-  animation: flashPulse 520ms ease-out forwards;
-}
-
-@keyframes sparkleBurst {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) translate(0, 0) scale(0.2) rotate(0deg);
-    filter: blur(4px);
+  .spectrum-wrap {
+    height: 60px;
   }
-  20% {
-    opacity: 1;
-    filter: blur(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) translate(var(--tx), var(--ty)) scale(1.15) rotate(90deg);
-    filter: blur(1px);
-  }
-}
-
-@keyframes flashPulse {
-  0% { opacity: 0; }
-  25% { opacity: 1; }
-  100% { opacity: 0; }
-}
 }
