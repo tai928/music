@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Music Player</title>
+  <title>Lyrics Player</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <canvas id="particleCanvas" class="particle-canvas"></canvas>
-  
+
   <div class="bg-orb orb-1"></div>
   <div class="bg-orb orb-2"></div>
   <div class="bg-orb orb-3"></div>
@@ -16,11 +16,19 @@
   <div class="app">
     <header class="topbar">
       <div class="brand-wrap">
-        <div class="brand">Music PLAYER</div>
-        <div class="brand-sub">easy to understand</div>
+        <div class="brand">LYRICS PLAYER</div>
+        <div class="brand-sub">lightweight visual music page</div>
       </div>
 
-      <select id="songSelect" class="song-select" aria-label="曲を選択"></select>
+      <div class="topbar-controls">
+        <select id="songSelect" class="song-select" aria-label="曲を選択"></select>
+
+        <select id="spectrumModeSelect" class="song-select" aria-label="スペクトラム表示を選択">
+          <option value="wave">Wave</option>
+          <option value="bars">Bars</option>
+          <option value="dots">Dots</option>
+        </select>
+      </div>
     </header>
 
     <main class="main">
@@ -30,10 +38,14 @@
         <p class="artist" id="songArtist">Artist</p>
       </div>
 
-      <section class="lyrics-stage">
+      <section class="lyrics-stage" id="lyricsStage">
         <div class="fx-layer" id="fxLayer"></div>
         <div class="lyrics" id="lyrics"></div>
       </section>
+
+      <div class="spectrum-wrap">
+        <canvas id="spectrumCanvas" class="spectrum-canvas"></canvas>
+      </div>
     </main>
 
     <footer class="player">
@@ -57,8 +69,8 @@
       <p class="start-label">MUSIC EXPERIENCE</p>
       <h2>Tap to Start</h2>
       <p class="start-text">
-        歌詞<br>
-        このように表示されます
+        曲に合わせて、ことばが浮かんで消える。<br />
+        軽量なのに雰囲気のある再生ページ。
       </p>
       <button class="btn primary-btn start-btn" id="startBtn" type="button">
         再生する
