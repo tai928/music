@@ -3,6 +3,7 @@ const songs = [
     title: "星降る海",
     artist: "Aqu3ra",
     file: "songs/星降る海.mp3",
+    spectrum: "wave",
     lyrics: [
       { start: 0.9, end: 3.2, text: "幾千の" },
       { start: 3.4, end: 6.8, text: "時を巡って今" },
@@ -62,7 +63,7 @@ const songs = [
       { start: 69.5, end: 70.0, text: "la-" , effect: "pop" },
       { start: 70.0, end: 71.7, text: "la-!!" , effect: "pop" },
       { start: 71.2, end: 73.6, text: "潮の満ち引きが" },
-      { start: 73.6, end: 78.6, text: "導いてくれるの",
+      { start: 73.6, end: 78.6, text: "導いてくれるの" },
     ]
   },
   {
